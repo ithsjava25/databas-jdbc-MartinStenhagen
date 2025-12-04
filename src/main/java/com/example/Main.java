@@ -1,5 +1,6 @@
 package com.example;
 
+import javax.xml.transform.Result;
 import java.sql.*;
 import java.util.Arrays;
 
@@ -29,24 +30,32 @@ public class Main {
             throw new RuntimeException(e);
         }
         //Todo: Starting point for your code
+        String username;
         boolean loggedIn = false;
+        char[] passwordChars; //char-array för ökad säkerhet med lösenord (String är immutable).
         IO.println("Welcome to the Moon Mission Project.\n");
-        String username = IO.readln("Enter username: ");
-        //char-array för ökad säkerhet med lösenord (String är immutable).
-        char[] passwordChars = IO.readln("Enter password: ").toCharArray();
 
-        if (!isLoginValid(jdbcUrl, dbUser, dbPass, username, passwordChars)) {
-            IO.println("Invalid username or password.");
-            String input = IO.readln("Press 0 to exit.");
-            if (input.equals("0")) {
-                System.exit(0);
+
+        while (!loggedIn) {
+            username = IO.readln("Enter username: ");
+            passwordChars = IO.readln("Enter password: ").toCharArray();
+            if(isLoginValid(jdbcUrl, dbUser, dbPass, username,passwordChars)) {
+                IO.println("Logged in successfully as " + username);
+                loggedIn = true;
+
+            } else {
+                String input = IO.readln("Invalid username or password. Enter 0 to exit or any other key to try again: ");
+                if(input.equals("0")) {
+                    System.exit(0);
+                }
             }
+
         }
-        IO.println("Logged in successfully as " + username);
+
 
         while (true) {
             IO.println("""
-                    -----------------------------
+                    \n-----------------------------
                     1) List moon missions
                     2) Get moon mission by id
                     3) Count missions by year
@@ -57,18 +66,21 @@ public class Main {
                     -----------------------------
                     """);
 
-            String input = IO.readln("Enter choice: ");
-            if (!isInputValid(input, 0, 6)) {
+            String input = IO.readln("Enter choice: ").trim();
+            if (input.isEmpty() || !isInputValid(input, 0, 6)) {
                 IO.println("Invalid input, enter a number 0-6.\n");
                 continue;
             }
             int choice = Integer.parseInt(input);
             switch (choice) {
-                case 0 -> System.exit(0);
+                case 0 -> {
+                    IO.println("Exiting program...");
+                    return;
+                }
 
                 case 1 -> listMissions(jdbcUrl, dbUser, dbPass);
 
-                case 2 -> getMissionsById(jdbcUrl,dbUser,dbPass);
+                case 2 -> getMissionById(jdbcUrl,dbUser,dbPass);
 
                 case 3 -> countMissionsByYear(jdbcUrl,dbUser,dbPass);
 
@@ -84,13 +96,13 @@ public class Main {
     }
 
     private boolean isLoginValid(String jdbcUrl, String dbUser, String dbPass, String username, char[] password) {
-        try (Connection conn = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
             String query = "select * from account where name = ? and password = ? ";
-            try (PreparedStatement stmt = conn.prepareStatement(query)) {
-                stmt.setString(1, username);
-                stmt.setString(2, Arrays.toString(password));
-                try (ResultSet rs = stmt.executeQuery()) {
-                    return rs.next() && rs.getInt(1) > 0;
+            try (PreparedStatement statement = connection.prepareStatement(query)) {
+                statement.setString(1, username);
+                statement.setString(2, new String(password));
+                try (ResultSet rs = statement.executeQuery()) {
+                    return rs.next();
                 }
             }
         } catch (SQLException e) {
@@ -108,12 +120,57 @@ public class Main {
     }
 
     private void listMissions(String jdbcUrl, String dbUser, String dbPass) {
+        String query = "select spacecraft from moon_mission";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass);
+             PreparedStatement statement = connection.prepareStatement(query);
+             ResultSet result = statement.executeQuery()) {
+
+            IO.println("\n--- Moon Mission Spacecrafts ---\n");
+            while (result.next()) {
+                String spacecraft = result.getString("spacecraft");
+                IO.println(spacecraft);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private void getMissionsById(String jdbcUrl, String dbUser, String dbPass) {
+    private void getMissionById(String jdbcUrl, String dbUser, String dbPass) {
+        String input = IO.readln("Enter mission id: ").trim();
+        int id;
+
+        try {
+            id = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            IO.println("Invalid input. Mission id must be a number.\n");
+            return;
+        }
+
+        String query = "select * from moon_mission where mission_id = ?";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass);
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            ;
+            statement.setInt(1, id);
+            try (ResultSet result = statement.executeQuery()) {
+                if (!result.next()) {
+                    IO.println("No mission found with id: " + id + "\n");
+                    return;
+                }
+                IO.println("\n--- Mission Details ---\n");
+                ResultSetMetaData metadata = result.getMetaData();
+                int columnCount = metadata.getColumnCount();
+                for (int i = 1; i <= columnCount; i++) {
+                    String column = metadata.getColumnLabel(i);
+                    String value = result.getString(i);
+                    IO.println(String.format("%-15s : %s", column, value));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private void countMissionsByYear(String jdbcUrl, String dbUser, String dbPass) {
+        private void countMissionsByYear(String jdbcUrl, String dbUser, String dbPass) {
     }
 
     private void createAccount(String jdbcUrl, String dbUser, String dbPass) {
