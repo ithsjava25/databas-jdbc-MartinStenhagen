@@ -202,6 +202,48 @@ public class Main {
     }
 
     private void createAccount(String jdbcUrl, String dbUser, String dbPass) {
+        String firstName = IO.readln("Enter a first name: ").trim();
+        String lastName = IO.readln("Enter a last name: ").trim();
+        String ssn = IO.readln("Enter ssn: ").trim();
+        String password = IO.readln("Choose a password: ").trim();
+
+        if (firstName.isEmpty() || lastName.isEmpty() || password.isEmpty()) {
+            IO.println("Invalid input. Names and password cannot be empty.\n");
+            return;
+        }
+        String name = (firstName.length() >=3 ? firstName.substring(0, 3) : firstName) +
+                (lastName.length() >=3 ? lastName.substring(0, 3) : lastName);
+
+        String checkQuery = "select * from account where ssn = ? ";
+        String insertQuery =  "insert into account(name, password,first_name, last_name, ssn) values(?, ?, ?, ?, ?)";
+        try(Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)){
+            try(PreparedStatement checkStatement = connection.prepareStatement(checkQuery)){
+                checkStatement.setString(1,ssn);
+                try(ResultSet result = checkStatement.executeQuery()){
+                    if (result.next()){
+                        IO.println("An account with ssn: " + ssn + " already exists.\n");
+                        return;
+                    }
+                }
+
+            }
+        try(PreparedStatement insertStatement = connection.prepareStatement(insertQuery)){
+            insertStatement.setString(1,name);
+            insertStatement.setString(2,password);
+            insertStatement.setString(3,firstName);
+            insertStatement.setString(4,lastName);
+            insertStatement.setString(5,ssn);
+
+            int rows = insertStatement.executeUpdate();
+            if (rows > 0) {
+                IO.println("Created account with username: " + name + "\n");
+            }else {
+                IO.println("Failed to create account.");
+            }
+        }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void updatePassword(String jdbcUrl, String dbUser, String dbPass) {
