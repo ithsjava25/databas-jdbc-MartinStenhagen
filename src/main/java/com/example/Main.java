@@ -247,6 +247,44 @@ public class Main {
     }
 
     private void updatePassword(String jdbcUrl, String dbUser, String dbPass) {
+        String input = IO.readln("Enter user id: ").trim();
+        int userId = 0;
+        try {
+            userId = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            IO.println("Invalid input. user id must be a number.\n");
+            return;
+        }
+
+        String newPassword = IO.readln("Enter a new password: ").trim();
+
+        String checkQuery = "select * from account where user_id = ?";
+        String updateQuery = "update account set password = ? where user_id = ?";
+
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+
+            try (PreparedStatement checkStatement = connection.prepareStatement(checkQuery)) {
+                checkStatement.setInt(1, userId);
+                try (ResultSet result = checkStatement.executeQuery()) {
+                    if (!result.next()) {
+                        IO.println("No user found with id: " + userId + "\n");
+                        return;
+                    }
+                }
+            }
+            try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery)) {
+                updateStatement.setString(1, newPassword);
+
+                int rows = updateStatement.executeUpdate();
+                if (rows > 0) {
+                    IO.println("Password updated for user " + userId + ".\n");
+                } else {
+                    IO.println("Password update failed.\n");
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void deleteAccount(String jdbcUrl, String dbUser, String dbPass) {
@@ -279,4 +317,5 @@ public class Main {
         }
         return (v == null || v.trim().isEmpty()) ? null : v.trim();
     }
+
 }
