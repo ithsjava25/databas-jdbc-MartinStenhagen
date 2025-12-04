@@ -1,8 +1,6 @@
 package com.example;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.Arrays;
 
 public class Main {
@@ -31,7 +29,102 @@ public class Main {
             throw new RuntimeException(e);
         }
         //Todo: Starting point for your code
+        boolean loggedIn = false;
+        IO.println("Welcome to the Moon Mission Project.\n");
+        String username = IO.readln("Enter username: ");
+        //char-array för ökad säkerhet med lösenord (String är immutable).
+        char[] passwordChars = IO.readln("Enter password: ").toCharArray();
+
+        if (!isLoginValid(jdbcUrl, dbUser, dbPass, username, passwordChars)) {
+            IO.println("Invalid username or password.");
+            String input = IO.readln("Press 0 to exit.");
+            if (input.equals("0")) {
+                System.exit(0);
+            }
+        }
+        IO.println("Logged in successfully as " + username);
+
+        while (true) {
+            IO.println("""
+                    -----------------------------
+                    1) List moon missions
+                    2) Get moon mission by id
+                    3) Count missions by year
+                    4) Create an account
+                    5) Update password
+                    6) Delete account
+                    0) Exit
+                    -----------------------------
+                    """);
+
+            String input = IO.readln("Enter choice: ");
+            if (!isInputValid(input, 0, 6)) {
+                IO.println("Invalid input, enter a number 0-6.\n");
+                continue;
+            }
+            int choice = Integer.parseInt(input);
+            switch (choice) {
+                case 0 -> System.exit(0);
+
+                case 1 -> listMissions(jdbcUrl, dbUser, dbPass);
+
+                case 2 -> getMissionsById(jdbcUrl,dbUser,dbPass);
+
+                case 3 -> countMissionsByYear(jdbcUrl,dbUser,dbPass);
+
+                case 4 -> createAccount(jdbcUrl, dbUser, dbPass);
+
+                case 5 -> updatePassword(jdbcUrl, dbUser, dbPass);
+
+                case 6 -> deleteAccount(jdbcUrl, dbUser, dbPass);
+            }
+        }
+
+
     }
+
+    private boolean isLoginValid(String jdbcUrl, String dbUser, String dbPass, String username, char[] password) {
+        try (Connection conn = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+            String query = "select * from account where name = ? and password = ? ";
+            try (PreparedStatement stmt = conn.prepareStatement(query)) {
+                stmt.setString(1, username);
+                stmt.setString(2, Arrays.toString(password));
+                try (ResultSet rs = stmt.executeQuery()) {
+                    return rs.next() && rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    //Hjälpmetod istället för att ha ett default-case för att fånga icke-numerisk input innan switch körs.
+    private boolean isInputValid(String input, int min, int max) {
+        try{
+            int n = Integer.parseInt(input);
+            return (n >= min && n <= max);
+        }catch(NumberFormatException e){
+            return false;
+        }
+    }
+
+    private void listMissions(String jdbcUrl, String dbUser, String dbPass) {
+    }
+
+    private void getMissionsById(String jdbcUrl, String dbUser, String dbPass) {
+    }
+
+    private void countMissionsByYear(String jdbcUrl, String dbUser, String dbPass) {
+    }
+
+    private void createAccount(String jdbcUrl, String dbUser, String dbPass) {
+    }
+
+    private void updatePassword(String jdbcUrl, String dbUser, String dbPass) {
+    }
+
+    private void deleteAccount(String jdbcUrl, String dbUser, String dbPass) {
+    }
+
 
     /**
      * Determines if the application is running in development mode based on system properties,
