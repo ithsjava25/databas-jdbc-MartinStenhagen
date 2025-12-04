@@ -211,36 +211,36 @@ public class Main {
             IO.println("Invalid input. Names and password cannot be empty.\n");
             return;
         }
-        String name = (firstName.length() >=3 ? firstName.substring(0, 3) : firstName) +
-                (lastName.length() >=3 ? lastName.substring(0, 3) : lastName);
+        String name = (firstName.length() >= 3 ? firstName.substring(0, 3) : firstName) +
+                (lastName.length() >= 3 ? lastName.substring(0, 3) : lastName);
 
         String checkQuery = "select * from account where ssn = ? ";
-        String insertQuery =  "insert into account(name, password,first_name, last_name, ssn) values(?, ?, ?, ?, ?)";
-        try(Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)){
-            try(PreparedStatement checkStatement = connection.prepareStatement(checkQuery)){
-                checkStatement.setString(1,ssn);
-                try(ResultSet result = checkStatement.executeQuery()){
-                    if (result.next()){
+        String insertQuery = "insert into account(name, password,first_name, last_name, ssn) values(?, ?, ?, ?, ?)";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+            try (PreparedStatement checkStatement = connection.prepareStatement(checkQuery)) {
+                checkStatement.setString(1, ssn);
+                try (ResultSet result = checkStatement.executeQuery()) {
+                    if (result.next()) {
                         IO.println("An account with ssn: " + ssn + " already exists.\n");
                         return;
                     }
                 }
 
             }
-        try(PreparedStatement insertStatement = connection.prepareStatement(insertQuery)){
-            insertStatement.setString(1,name);
-            insertStatement.setString(2,password);
-            insertStatement.setString(3,firstName);
-            insertStatement.setString(4,lastName);
-            insertStatement.setString(5,ssn);
+            try (PreparedStatement insertStatement = connection.prepareStatement(insertQuery)) {
+                insertStatement.setString(1, name);
+                insertStatement.setString(2, password);
+                insertStatement.setString(3, firstName);
+                insertStatement.setString(4, lastName);
+                insertStatement.setString(5, ssn);
 
-            int rows = insertStatement.executeUpdate();
-            if (rows > 0) {
-                IO.println("Created account with username: " + name + "\n");
-            }else {
-                IO.println("Failed to create account.");
+                int rows = insertStatement.executeUpdate();
+                if (rows > 0) {
+                    IO.println("Created account with username: " + name + "\n");
+                } else {
+                    IO.println("Failed to create account.");
+                }
             }
-        }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
@@ -274,6 +274,7 @@ public class Main {
             }
             try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery)) {
                 updateStatement.setString(1, newPassword);
+                updateStatement.setInt(2, userId);
 
                 int rows = updateStatement.executeUpdate();
                 if (rows > 0) {
@@ -288,6 +289,51 @@ public class Main {
     }
 
     private void deleteAccount(String jdbcUrl, String dbUser, String dbPass) {
+        String fullName;
+        String input = IO.readln("Enter user id to delete: ").trim();
+        int userId = 0;
+        try {
+            userId = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            IO.println("Invalid input. user id must be a number.\n");
+            return;
+        }
+        String checkQuery = "select * from account where user_id = ?";
+        String deleteQuery = "delete from account where user_id = ?";
+
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+
+            try (PreparedStatement checkStatement = connection.prepareStatement(checkQuery)) {
+                checkStatement.setInt(1, userId);
+                try (ResultSet result = checkStatement.executeQuery()) {
+                    if (!result.next()) {
+                        IO.println("No user found with id: " + userId + "\n");
+                        return;
+                    }
+                    fullName = result.getString("first_name") + " " + result.getString("last_name");
+                }
+            }
+            String confirm = IO.readln("Delete account for " + fullName + " ? (yes/no): ").trim().toLowerCase();
+            if (!confirm.equals("yes")) {
+                IO.println("Deletion cancelled.\n");
+                return;
+            }
+
+            try (PreparedStatement deleteStatement = connection.prepareStatement(deleteQuery)) {
+                deleteStatement.setInt(1, userId);
+
+                int rows = deleteStatement.executeUpdate();
+                if (rows > 0) {
+                    IO.println("Account with id: " + userId + " has been deleted\n");
+                } else {
+                    IO.println("Failed to delete account.\n");
+
+                }
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
