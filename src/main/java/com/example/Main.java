@@ -39,13 +39,13 @@ public class Main {
         while (!loggedIn) {
             username = IO.readln("Enter username: ");
             passwordChars = IO.readln("Enter password: ").toCharArray();
-            if(isLoginValid(jdbcUrl, dbUser, dbPass, username,passwordChars)) {
+            if (isLoginValid(jdbcUrl, dbUser, dbPass, username, passwordChars)) {
                 IO.println("Logged in successfully as " + username);
                 loggedIn = true;
 
             } else {
                 String input = IO.readln("Invalid username or password. Enter 0 to exit or any other key to try again: ");
-                if(input.equals("0")) {
+                if (input.equals("0")) {
                     System.exit(0);
                 }
             }
@@ -80,9 +80,9 @@ public class Main {
 
                 case 1 -> listMissions(jdbcUrl, dbUser, dbPass);
 
-                case 2 -> getMissionById(jdbcUrl,dbUser,dbPass);
+                case 2 -> getMissionById(jdbcUrl, dbUser, dbPass);
 
-                case 3 -> countMissionsByYear(jdbcUrl,dbUser,dbPass);
+                case 3 -> countMissionsByYear(jdbcUrl, dbUser, dbPass);
 
                 case 4 -> createAccount(jdbcUrl, dbUser, dbPass);
 
@@ -109,12 +109,13 @@ public class Main {
             throw new RuntimeException(e);
         }
     }
+
     //Hjälpmetod istället för att ha ett default-case för att fånga icke-numerisk input innan switch körs.
     private boolean isInputValid(String input, int min, int max) {
-        try{
+        try {
             int n = Integer.parseInt(input);
             return (n >= min && n <= max);
-        }catch(NumberFormatException e){
+        } catch (NumberFormatException e) {
             return false;
         }
     }
@@ -170,7 +171,34 @@ public class Main {
         }
     }
 
-        private void countMissionsByYear(String jdbcUrl, String dbUser, String dbPass) {
+    private void countMissionsByYear(String jdbcUrl, String dbUser, String dbPass) {
+        String input = IO.readln("Enter mission year: ").trim();
+        int year = 0;
+
+        try {
+            year = Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            IO.println("Invalid input. Mission year must be a number.\n");
+        }
+        String query = "select count(*) as numberOfMissions from moon_mission where year(launch_date) = ?";
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass);
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, year);
+            try (ResultSet result = statement.executeQuery()) {
+                if (result.next()) {
+                    int numberOfMissions = result.getInt("numberOfMissions");
+                    if (numberOfMissions == 1) {
+                        IO.println("Found " + numberOfMissions + " mission for year: " + year + "\n");
+                    } else if (numberOfMissions > 1) {
+                        IO.println("Found " + numberOfMissions + " missions for year: " + year + "\n");
+                    } else {
+                        IO.println("No missions found for year: " + year + "\n");
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void createAccount(String jdbcUrl, String dbUser, String dbPass) {
