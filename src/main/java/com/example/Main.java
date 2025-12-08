@@ -1,19 +1,23 @@
 package com.example;
 
+import org.testcontainers.shaded.com.fasterxml.jackson.databind.util.ISO8601Utils;
+
 import javax.xml.transform.Result;
 import java.sql.*;
 import java.util.Arrays;
+import java.util.Scanner;
 
 public class Main {
+    private Scanner scanner;
 
-    static void main(String[] args) {
+    static void main(String[] args) throws SQLException {
         if (isDevMode(args)) {
             DevDatabaseInitializer.start();
         }
         new Main().run();
     }
 
-    public void run() {
+    public void run() throws SQLException {
         // Resolve DB settings with precedence: System properties -> Environment variables
         String jdbcUrl = resolveConfig("APP_JDBC_URL", "APP_JDBC_URL");
         String dbUser = resolveConfig("APP_DB_USER", "APP_DB_USER");
@@ -26,35 +30,33 @@ public class Main {
         }
 
         try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+            if (connection != null) {
+                System.out.println("Connected to the database");
+            }
+            scanner = new Scanner(System.in);
+            login(connection);
+            runMenu(connection);
+//            listMissions(connection);
+//            getMissionById(connection);
+//            countMissionsByYear(connection);
+
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to connect to the database");
         }
         //Todo: Starting point for your code
-        String username;
-        boolean loggedIn = false;
-        char[] passwordChars; //char-array för ökad säkerhet med lösenord (String är immutable).
-        IO.println("Welcome to the Moon Mission Project.\n");
+        //Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass);
+
+//        if (!this.login(connection)) {
+//            return;
+//        }
 
 
-        while (!loggedIn) {
-            username = IO.readln("Enter username: ");
-            passwordChars = IO.readln("Enter password: ").toCharArray();
-            if (isLoginValid(jdbcUrl, dbUser, dbPass, username, passwordChars)) {
-                IO.println("Logged in successfully as " + username);
-                loggedIn = true;
 
-            } else {
-                String input = IO.readln("Invalid username or password. Enter 0 to exit or any other key to try again: ");
-                if (input.equals("0")) {
-                    System.exit(0);
-                }
-            }
+    }
 
-        }
-
-
+    private void runMenu(Connection connection) throws SQLException {
         while (true) {
-            IO.println("""
+            System.out.println("""
                     \n-----------------------------
                     1) List moon missions
                     2) Get moon mission by id
@@ -66,9 +68,10 @@ public class Main {
                     -----------------------------
                     """);
 
-            String input = IO.readln("Enter choice: ").trim();
+            System.out.println("Enter choice: ");
+            String input = scanner.nextLine();
             if (input.isEmpty() || !isInputValid(input, 0, 6)) {
-                IO.println("Invalid input, enter a number 0-6.\n");
+                System.out.println("Invalid input, enter a number 0-6.\n");
                 continue;
             }
             int choice = Integer.parseInt(input);
@@ -78,37 +81,50 @@ public class Main {
                     return;
                 }
 
-                case 1 -> listMissions(jdbcUrl, dbUser, dbPass);
+                case 1 -> listMissions(connection);
 
-                case 2 -> getMissionById(jdbcUrl, dbUser, dbPass);
+                case 2 -> getMissionById(connection);
 
-                case 3 -> countMissionsByYear(jdbcUrl, dbUser, dbPass);
+                case 3 -> countMissionsByYear(connection);
 
-                case 4 -> createAccount(jdbcUrl, dbUser, dbPass);
+                case 4 -> createAccount(connection);
 
-                case 5 -> updatePassword(jdbcUrl, dbUser, dbPass);
+                case 5 -> updatePassword(connection);
 
-                case 6 -> deleteAccount(jdbcUrl, dbUser, dbPass);
+                case 6 -> deleteAccount(connection);
             }
         }
-
-
     }
 
-    private boolean isLoginValid(String jdbcUrl, String dbUser, String dbPass, String username, char[] password) {
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
-            String query = "select * from account where name = ? and password = ? ";
-            try (PreparedStatement statement = connection.prepareStatement(query)) {
-                statement.setString(1, username);
-                statement.setString(2, new String(password));
-                try (ResultSet rs = statement.executeQuery()) {
-                    return rs.next();
-                }
+
+    private void login(Connection connection) {
+        System.out.print("Enter username: ");
+        String username = scanner.nextLine();
+        if (username == null) return;
+
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
+        if (password == null) return;
+
+        boolean valid = false;
+
+        String sql = "select name, password from account where name = ? and password = ?";
+        try (PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, username);
+            ps.setString(2, password);
+            try (ResultSet rs = ps.executeQuery()) {
+                valid = rs.next();
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
+        }
+
+        if (!valid) {
+            System.out.println("Invalid username or password");
         }
     }
+
+
 
     //Hjälpmetod istället för att ha ett default-case för att fånga icke-numerisk input innan switch körs.
     private boolean isInputValid(String input, int min, int max) {
@@ -120,50 +136,49 @@ public class Main {
         }
     }
 
-    private void listMissions(String jdbcUrl, String dbUser, String dbPass) {
+    private void listMissions(Connection connection) throws SQLException {
         String query = "select spacecraft from moon_mission";
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass);
-             PreparedStatement statement = connection.prepareStatement(query);
+
+        try (PreparedStatement statement = connection.prepareStatement(query);
              ResultSet result = statement.executeQuery()) {
 
-            IO.println("\n--- Moon Mission Spacecrafts ---\n");
             while (result.next()) {
                 String spacecraft = result.getString("spacecraft");
-                IO.println(spacecraft);
+                System.out.println(spacecraft);
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private void getMissionById(String jdbcUrl, String dbUser, String dbPass) {
-        String input = IO.readln("Enter mission id: ").trim();
+    private void getMissionById(Connection connection) throws SQLException {
+        System.out.println("Enter mission id: ");
+        String input = scanner.nextLine();
         int id;
 
         try {
             id = Integer.parseInt(input);
         } catch (NumberFormatException e) {
-            IO.println("Invalid input. Mission id must be a number.\n");
+            System.out.println("Invalid input. Mission id must be a number.\n");
             return;
         }
 
         String query = "select * from moon_mission where mission_id = ?";
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass);
-             PreparedStatement statement = connection.prepareStatement(query)) {
-            ;
+
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setInt(1, id);
             try (ResultSet result = statement.executeQuery()) {
                 if (!result.next()) {
-                    IO.println("No mission found with id: " + id + "\n");
+                    System.out.println("No mission found with id: " + id + "\n");
                     return;
                 }
-                IO.println("\n--- Mission Details ---\n");
+                System.out.println("\n--- Mission Details ---\n");
                 ResultSetMetaData metadata = result.getMetaData();
                 int columnCount = metadata.getColumnCount();
                 for (int i = 1; i <= columnCount; i++) {
                     String column = metadata.getColumnLabel(i);
                     String value = result.getString(i);
-                    IO.println(String.format("%-15s : %s", column, value));
+                    System.out.println(String.format("%-15s : %s", column, value));
                 }
             }
         } catch (SQLException e) {
@@ -171,28 +186,29 @@ public class Main {
         }
     }
 
-    private void countMissionsByYear(String jdbcUrl, String dbUser, String dbPass) {
-        String input = IO.readln("Enter mission year: ").trim();
+    private void countMissionsByYear(Connection connection) {
+        System.out.println("Enter mission year: ");
+        String input = scanner.nextLine();
         int year = 0;
 
         try {
             year = Integer.parseInt(input);
         } catch (NumberFormatException e) {
-            IO.println("Invalid input. Mission year must be a number.\n");
+            System.out.println("Invalid input. Mission year must be a number.\n");
         }
         String query = "select count(*) as numberOfMissions from moon_mission where year(launch_date) = ?";
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass);
-             PreparedStatement statement = connection.prepareStatement(query)) {
+
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setInt(1, year);
             try (ResultSet result = statement.executeQuery()) {
                 if (result.next()) {
                     int numberOfMissions = result.getInt("numberOfMissions");
                     if (numberOfMissions == 1) {
-                        IO.println("Found " + numberOfMissions + " mission for year: " + year + "\n");
+                        System.out.println("Found " + numberOfMissions + " mission for year: " + year + "\n");
                     } else if (numberOfMissions > 1) {
-                        IO.println("Found " + numberOfMissions + " missions for year: " + year + "\n");
+                        System.out.println("Found " + numberOfMissions + " missions for year: " + year + "\n");
                     } else {
-                        IO.println("No missions found for year: " + year + "\n");
+                        System.out.println("No missions found for year: " + year + "\n");
                     }
                 }
             }
@@ -201,14 +217,18 @@ public class Main {
         }
     }
 
-    private void createAccount(String jdbcUrl, String dbUser, String dbPass) {
-        String firstName = IO.readln("Enter a first name: ").trim();
-        String lastName = IO.readln("Enter a last name: ").trim();
-        String ssn = IO.readln("Enter ssn: ").trim();
-        String password = IO.readln("Choose a password: ").trim();
+    private void createAccount(Connection connection) throws SQLException {
+        System.out.println("Enter a first name: ");
+        String firstName = scanner.nextLine();
+        System.out.println("Enter a last name: ");
+        String lastName = scanner.nextLine();
+        System.out.println("Enter ssn: ");
+        String ssn = scanner.nextLine();
+        System.out.println("Choose a password: ");
+        String password = scanner.nextLine();
 
         if (firstName.isEmpty() || lastName.isEmpty() || password.isEmpty()) {
-            IO.println("Invalid input. Names and password cannot be empty.\n");
+            System.out.println("Invalid input. Names and password cannot be empty.\n");
             return;
         }
         String name = (firstName.length() >= 3 ? firstName.substring(0, 3) : firstName) +
@@ -216,124 +236,120 @@ public class Main {
 
         String checkQuery = "select * from account where ssn = ? ";
         String insertQuery = "insert into account(name, password,first_name, last_name, ssn) values(?, ?, ?, ?, ?)";
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
-            try (PreparedStatement checkStatement = connection.prepareStatement(checkQuery)) {
-                checkStatement.setString(1, ssn);
-                try (ResultSet result = checkStatement.executeQuery()) {
-                    if (result.next()) {
-                        IO.println("An account with ssn: " + ssn + " already exists.\n");
-                        return;
-                    }
-                }
 
-            }
-            try (PreparedStatement insertStatement = connection.prepareStatement(insertQuery)) {
-                insertStatement.setString(1, name);
-                insertStatement.setString(2, password);
-                insertStatement.setString(3, firstName);
-                insertStatement.setString(4, lastName);
-                insertStatement.setString(5, ssn);
-
-                int rows = insertStatement.executeUpdate();
-                if (rows > 0) {
-                    IO.println("Created account with username: " + name + "\n");
-                } else {
-                    IO.println("Failed to create account.");
+        try (PreparedStatement checkStatement = connection.prepareStatement(checkQuery)) {
+            checkStatement.setString(1, ssn);
+            try (ResultSet result = checkStatement.executeQuery()) {
+                if (result.next()) {
+                    System.out.println("An account with ssn: " + ssn + " already exists.\n");
+                    return;
                 }
             }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+
+        }
+        try (PreparedStatement insertStatement = connection.prepareStatement(insertQuery)) {
+            insertStatement.setString(1, name);
+            insertStatement.setString(2, password);
+            insertStatement.setString(3, firstName);
+            insertStatement.setString(4, lastName);
+            insertStatement.setString(5, ssn);
+
+            int rows = insertStatement.executeUpdate();
+            if (rows > 0) {
+                System.out.println("Created account with username: " + name + "\n");
+            } else {
+                System.out.println("Failed to create account.");
+            }
         }
     }
 
-    private void updatePassword(String jdbcUrl, String dbUser, String dbPass) {
-        String input = IO.readln("Enter user id: ").trim();
+
+    private void updatePassword(Connection connection) throws SQLException {
+        System.out.println("Enter user id: ");
+        String input = scanner.nextLine();
         int userId = 0;
         try {
             userId = Integer.parseInt(input);
         } catch (NumberFormatException e) {
-            IO.println("Invalid input. user id must be a number.\n");
+            System.out.println("Invalid input. user id must be a number.\n");
             return;
         }
-
-        String newPassword = IO.readln("Enter a new password: ").trim();
+        System.out.println("Enter a new password: ");
+        String newPassword = scanner.nextLine();
 
         String checkQuery = "select * from account where user_id = ?";
         String updateQuery = "update account set password = ? where user_id = ?";
 
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
 
-            try (PreparedStatement checkStatement = connection.prepareStatement(checkQuery)) {
-                checkStatement.setInt(1, userId);
-                try (ResultSet result = checkStatement.executeQuery()) {
-                    if (!result.next()) {
-                        IO.println("No user found with id: " + userId + "\n");
-                        return;
-                    }
+        try (PreparedStatement checkStatement = connection.prepareStatement(checkQuery)) {
+            checkStatement.setInt(1, userId);
+            try (ResultSet result = checkStatement.executeQuery()) {
+                if (!result.next()) {
+                    System.out.println("No user found with id: " + userId + "\n");
+                    return;
                 }
             }
-            try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery)) {
-                updateStatement.setString(1, newPassword);
-                updateStatement.setInt(2, userId);
-
-                int rows = updateStatement.executeUpdate();
-                if (rows > 0) {
-                    IO.println("Password updated for user " + userId + ".\n");
-                } else {
-                    IO.println("Password update failed.\n");
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
+        try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery)) {
+            updateStatement.setString(1, newPassword);
+            updateStatement.setInt(2, userId);
+
+            int rows = updateStatement.executeUpdate();
+            if (rows > 0) {
+                System.out.println("Password updated for user " + userId + ".\n");
+            } else {
+                System.out.println("Password update failed.\n");
+            }
+        }
+
     }
 
-    private void deleteAccount(String jdbcUrl, String dbUser, String dbPass) {
+
+    private void deleteAccount(Connection connection) throws SQLException {
         String fullName;
-        String input = IO.readln("Enter user id to delete: ").trim();
+        System.out.println("Enter user id to delete: ");
+        String input = scanner.nextLine();
         int userId = 0;
         try {
             userId = Integer.parseInt(input);
         } catch (NumberFormatException e) {
-            IO.println("Invalid input. user id must be a number.\n");
+            System.out.println("Invalid input. user id must be a number.\n");
             return;
         }
         String checkQuery = "select * from account where user_id = ?";
         String deleteQuery = "delete from account where user_id = ?";
 
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
 
-            try (PreparedStatement checkStatement = connection.prepareStatement(checkQuery)) {
-                checkStatement.setInt(1, userId);
-                try (ResultSet result = checkStatement.executeQuery()) {
-                    if (!result.next()) {
-                        IO.println("No user found with id: " + userId + "\n");
-                        return;
-                    }
-                    fullName = result.getString("first_name") + " " + result.getString("last_name");
+        try (PreparedStatement checkStatement = connection.prepareStatement(checkQuery)) {
+            checkStatement.setInt(1, userId);
+            try (ResultSet result = checkStatement.executeQuery()) {
+                if (!result.next()) {
+                    System.out.println("No user found with id: " + userId + "\n");
+                    return;
                 }
+                fullName = result.getString("first_name") + " " + result.getString("last_name");
             }
-            String confirm = IO.readln("Delete account for " + fullName + " ? (yes/no): ").trim().toLowerCase();
-            if (!confirm.equals("yes")) {
-                IO.println("Deletion cancelled.\n");
-                return;
-            }
-
-            try (PreparedStatement deleteStatement = connection.prepareStatement(deleteQuery)) {
-                deleteStatement.setInt(1, userId);
-
-                int rows = deleteStatement.executeUpdate();
-                if (rows > 0) {
-                    IO.println("Account with id: " + userId + " has been deleted\n");
-                } else {
-                    IO.println("Failed to delete account.\n");
-
-                }
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
         }
+        System.out.println("Delete account for " + fullName + " ? (yes/no): ");
+        String confirm = scanner.nextLine();
+        if (!confirm.equals("yes")) {
+            System.out.println("Deletion cancelled.\n");
+            return;
+        }
+
+        try (PreparedStatement deleteStatement = connection.prepareStatement(deleteQuery)) {
+            deleteStatement.setInt(1, userId);
+
+            int rows = deleteStatement.executeUpdate();
+            if (rows > 0) {
+                System.out.println("Account with id: " + userId + " has been deleted\n");
+            } else {
+                System.out.println("Failed to delete account.\n");
+
+            }
+        }
+
+
     }
 
 
@@ -365,3 +381,4 @@ public class Main {
     }
 
 }
+
