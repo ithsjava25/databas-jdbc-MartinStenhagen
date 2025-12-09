@@ -156,34 +156,23 @@ public class Main {
 
     }
 
-    private void countMissionsByYear(Connection connection) {
+    private void countMissionsByYear(MoonMissionRepository missionRepo) {
         System.out.println("Enter mission year: ");
         String input = scanner.nextLine();
-        int year = 0;
-
-        try {
+        int year;
+        try{
             year = Integer.parseInt(input);
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Mission year must be a number.\n");
+            return;
         }
-        String query = "select count(*) as numberOfMissions from moon_mission where year(launch_date) = ?";
-
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, year);
-            try (ResultSet result = statement.executeQuery()) {
-                if (result.next()) {
-                    int numberOfMissions = result.getInt("numberOfMissions");
-                    if (numberOfMissions == 1) {
-                        System.out.println("Found " + numberOfMissions + " mission for year: " + year + "\n");
-                    } else if (numberOfMissions > 1) {
-                        System.out.println("Found " + numberOfMissions + " missions for year: " + year + "\n");
-                    } else {
-                        System.out.println("No missions found for year: " + year + "\n");
-                    }
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        int numberOfMissions = missionRepo.countByYear(year);
+        if (numberOfMissions == 0) {
+            System.out.println("No missions found for year: " + year + "\n");
+        } else if (numberOfMissions == 1) {
+            System.out.println("Found " + numberOfMissions + " mission for year: " + year + "\n");
+        }else{
+            System.out.println("Found " + numberOfMissions + " missions for year: " + year + "\n");
         }
     }
 
