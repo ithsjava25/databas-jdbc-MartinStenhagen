@@ -85,7 +85,6 @@ public class JdbcMoonMissionRepository implements MoonMissionRepository {
         return missions;
     }
 
-
     @Override
     public int countByYear(int year) {
         String query = "select count(*) from moon_mission where year(launch_date) = ?";

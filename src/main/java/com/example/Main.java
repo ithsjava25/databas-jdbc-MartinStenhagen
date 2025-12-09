@@ -28,7 +28,7 @@ public class Main {
         new Main().run();
     }
 
-    public void run() throws SQLException {
+    public void run() {
         // Resolve DB settings with precedence: System properties -> Environment variables
         String jdbcUrl = resolveConfig("APP_JDBC_URL", "APP_JDBC_URL");
         String dbUser = resolveConfig("APP_DB_USER", "APP_DB_USER");
@@ -48,7 +48,7 @@ public class Main {
         runMenu(accountRepo,missionRepo);
     }
 
-    private void runMenu(AccountRepository accountRepo, MoonMissionRepository missionRepo) throws SQLException {
+    private void runMenu(AccountRepository accountRepo, MoonMissionRepository missionRepo) {
         while (true) {
             System.out.println("""
                     \n-----------------------------
@@ -90,7 +90,6 @@ public class Main {
         }
     }
 
-
     private void login() {
         System.out.print("Enter username: ");
         String username = scanner.nextLine();
@@ -105,8 +104,6 @@ public class Main {
             System.out.println("Invalid username or password");
         }
     }
-
-
 
     //Hjälpmetod istället för att ha ett default-case för att fånga icke-numerisk input innan switch körs.
     private boolean isInputValid(String input, int min, int max) {
@@ -145,6 +142,7 @@ public class Main {
             System.out.println("No mission found with id: " + id + "\n");
             return;
         }
+
         System.out.println("\n---Mission Details---\n");
         System.out.println("Mission id: " + mission.get().getId());
         System.out.println("Spacecraft: " + mission.get().getSpacecraft());
@@ -153,8 +151,6 @@ public class Main {
         System.out.println("Operator: " + mission.get().getOperator());
         System.out.println("Mission type: " + mission.get().getMission_type());
         System.out.println("Outcome: " + mission.get().getOutcome());
-
-
     }
 
     private void countMissionsByYear(MoonMissionRepository missionRepo) {
@@ -228,9 +224,6 @@ public class Main {
 
         accountRepo.updatePassword(userId, newPassword);
         System.out.println("Updated password for user with id: " + userId + "\n");
-
-        String checkQuery = "select * from account where user_id = ?";
-        String updateQuery = "update account set password = ? where user_id = ?";
     }
 
 
