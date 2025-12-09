@@ -330,12 +330,12 @@ public class Main {
                 fullName = result.getString("first_name") + " " + result.getString("last_name");
             }
         }
-        System.out.println("Delete account for " + fullName + " ? (yes/no): ");
-        String confirm = scanner.nextLine();
-        if (!confirm.equals("yes")) {
-            System.out.println("Deletion cancelled.\n");
-            return;
-        }
+//        System.out.println("Delete account for " + fullName + " ? (yes/no): ");
+//        String confirm = scanner.nextLine();
+//        if (!confirm.equals("yes")) {
+//            System.out.println("Deletion cancelled.\n");
+//            return;
+//        }
 
         try (PreparedStatement deleteStatement = connection.prepareStatement(deleteQuery)) {
             deleteStatement.setInt(1, userId);
