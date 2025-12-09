@@ -12,6 +12,7 @@ import javax.xml.transform.Result;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.Scanner;
 
 public class Main {
@@ -126,7 +127,7 @@ public class Main {
         }
     }
 
-    private void getMissionById(Connection connection) throws SQLException {
+    private void getMissionById(MoonMissionRepository missionRepo) {
         System.out.println("Enter mission id: ");
         String input = scanner.nextLine();
         int id;
@@ -137,28 +138,22 @@ public class Main {
             System.out.println("Invalid input. Mission id must be a number.\n");
             return;
         }
+        Optional<MoonMission> mission = missionRepo.findById(id);
 
-        String query = "select * from moon_mission where mission_id = ?";
-
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, id);
-            try (ResultSet result = statement.executeQuery()) {
-                if (!result.next()) {
-                    System.out.println("No mission found with id: " + id + "\n");
-                    return;
-                }
-                System.out.println("\n--- Mission Details ---\n");
-                ResultSetMetaData metadata = result.getMetaData();
-                int columnCount = metadata.getColumnCount();
-                for (int i = 1; i <= columnCount; i++) {
-                    String column = metadata.getColumnLabel(i);
-                    String value = result.getString(i);
-                    System.out.println(String.format("%-15s : %s", column, value));
-                }
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        if (mission.isEmpty()) {
+            System.out.println("No mission found with id: " + id + "\n");
+            return;
         }
+        System.out.println("\n---Mission Details---\n");
+        System.out.println("Mission id: " + mission.get().getId());
+        System.out.println("Spacecraft: " + mission.get().getSpacecraft());
+        System.out.println("Launch_date: " + mission.get().getLaunchDate());
+        System.out.println("Carrier rocket: " + mission.get().getCarrier_rocket());
+        System.out.println("Operator: " + mission.get().getOperator());
+        System.out.println("Mission type: " + mission.get().getMission_type());
+        System.out.println("Outcome: " + mission.get().getOutcome());
+
+
     }
 
     private void countMissionsByYear(Connection connection) {
