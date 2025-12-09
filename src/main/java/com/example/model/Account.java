@@ -7,4 +7,8 @@ public class Account {
     public String firstName;
     public String lastName;
     public String ssn;
+
+    public Account(String name, String password, String firstName, String lastName, String ssn) {
+    }
+    public Account(){}
 }

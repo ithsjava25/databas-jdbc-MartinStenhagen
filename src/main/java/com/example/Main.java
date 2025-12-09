@@ -1,5 +1,6 @@
 package com.example;
 
+import com.example.model.Account;
 import com.example.model.MoonMission;
 import com.example.repo.AccountRepository;
 import com.example.repo.MoonMissionRepository;
@@ -176,7 +177,7 @@ public class Main {
         }
     }
 
-    private void createAccount(Connection connection) throws SQLException {
+    private void createAccount() {
         System.out.println("Enter a first name: ");
         String firstName = scanner.nextLine();
         System.out.println("Enter a last name: ");
@@ -190,36 +191,18 @@ public class Main {
             System.out.println("Invalid input. Names and password cannot be empty.\n");
             return;
         }
+
+        if (accountRepo.existsBySsn(ssn)) {
+            System.out.println("An account with ssn: " + ssn + " already exists.\n");
+            return;
+        }
+
         String name = (firstName.length() >= 3 ? firstName.substring(0, 3) : firstName) +
                 (lastName.length() >= 3 ? lastName.substring(0, 3) : lastName);
 
-        String checkQuery = "select * from account where ssn = ? ";
-        String insertQuery = "insert into account(name, password,first_name, last_name, ssn) values(?, ?, ?, ?, ?)";
-
-        try (PreparedStatement checkStatement = connection.prepareStatement(checkQuery)) {
-            checkStatement.setString(1, ssn);
-            try (ResultSet result = checkStatement.executeQuery()) {
-                if (result.next()) {
-                    System.out.println("An account with ssn: " + ssn + " already exists.\n");
-                    return;
-                }
-            }
-
-        }
-        try (PreparedStatement insertStatement = connection.prepareStatement(insertQuery)) {
-            insertStatement.setString(1, name);
-            insertStatement.setString(2, password);
-            insertStatement.setString(3, firstName);
-            insertStatement.setString(4, lastName);
-            insertStatement.setString(5, ssn);
-
-            int rows = insertStatement.executeUpdate();
-            if (rows > 0) {
-                System.out.println("Created account with username: " + name + "\n");
-            } else {
-                System.out.println("Failed to create account.");
-            }
-        }
+        Account account = new Account(name, password , firstName, lastName, ssn);
+        accountRepo.create(account);
+        System.out.println("Created account with username: " + name + "\n");
     }
 
 
