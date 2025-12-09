@@ -1,5 +1,6 @@
 package com.example;
 
+import com.example.model.MoonMission;
 import com.example.repo.AccountRepository;
 import com.example.repo.MoonMissionRepository;
 import com.example.repo.jdbc.JdbcAccountRepository;
@@ -10,6 +11,7 @@ import javax.sql.DataSource;
 import javax.xml.transform.Result;
 import java.sql.*;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -71,17 +73,17 @@ public class Main {
                     return;
                 }
 
-                case 1 -> listMissions(connection);
+                case 1 -> listMissions(missionRepo);
 
-                case 2 -> getMissionById(connection);
+                case 2 -> getMissionById(missionRepo);
 
-                case 3 -> countMissionsByYear(connection);
+                case 3 -> countMissionsByYear(missionRepo);
 
-                case 4 -> createAccount(connection);
+                case 4 -> createAccount(accountRepo);
 
-                case 5 -> updatePassword(connection);
+                case 5 -> updatePassword(accountRepo);
 
-                case 6 -> deleteAccount(connection);
+                case 6 -> deleteAccount(accountRepo);
             }
         }
     }
@@ -114,18 +116,13 @@ public class Main {
         }
     }
 
-    private void listMissions(Connection connection) throws SQLException {
-        String query = "select spacecraft from moon_mission";
-
-        try (PreparedStatement statement = connection.prepareStatement(query);
-             ResultSet result = statement.executeQuery()) {
-
-            while (result.next()) {
-                String spacecraft = result.getString("spacecraft");
-                System.out.println(spacecraft);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+    private void listMissions(MoonMissionRepository missionRepo) {
+        List<MoonMission> missions = missionRepo.findAll();
+        if (missions.isEmpty()) {
+            System.out.println("No missions found.");
+        }
+        for (MoonMission mission : missions){
+        System.out.println(mission.getSpacecraft());
         }
     }
 

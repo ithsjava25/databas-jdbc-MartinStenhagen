@@ -9,6 +9,7 @@ public interface MoonMissionRepository {
     List<String> listSpacecraft();
 
     Optional<MoonMission> findById(int id);
+    List<MoonMission> findAll();
 
     int countByYear(int year);
 }

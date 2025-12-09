@@ -61,6 +61,32 @@ public class JdbcMoonMissionRepository implements MoonMissionRepository {
     }
 
     @Override
+    public List<MoonMission> findAll() {
+        List<MoonMission> missions = new ArrayList<>();
+
+        String sql = "SELECT mission_id, spacecraft, launch_date FROM moon_mission";
+
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement statement = connection.prepareStatement(sql);
+             ResultSet resultSet = statement.executeQuery()) {
+
+            while (resultSet.next()) {
+                MoonMission mission = new MoonMission();
+                mission.id = resultSet.getInt("mission_id");
+                mission.spacecraft = resultSet.getString("spacecraft");
+                mission.launchDate = resultSet.getDate("launch_date").toLocalDate();
+                missions.add(mission);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+        return missions;
+    }
+
+
+    @Override
     public int countByYear(int year) {
         String query = "select count(*) from moon_mission where year(launch_date) = ?";
 
