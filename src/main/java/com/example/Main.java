@@ -1,7 +1,12 @@
 package com.example;
 
+import com.example.repo.AccountRepository;
+import com.example.repo.MoonMissionRepository;
+import com.example.repo.jdbc.JdbcAccountRepository;
+import com.example.repo.jdbc.JdbcMoonMissionRepository;
 import org.testcontainers.shaded.com.fasterxml.jackson.databind.util.ISO8601Utils;
 
+import javax.sql.DataSource;
 import javax.xml.transform.Result;
 import java.sql.*;
 import java.util.Arrays;
@@ -9,6 +14,8 @@ import java.util.Scanner;
 
 public class Main {
     private Scanner scanner;
+    private AccountRepository accountRepo;
+    private MoonMissionRepository missionRepo;
 
     static void main(String[] args) throws SQLException {
         if (isDevMode(args)) {
@@ -29,32 +36,15 @@ public class Main {
                             "as system properties (-Dkey=value) or environment variables.");
         }
 
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
-            if (connection != null) {
-                System.out.println("Connected to the database");
-            }
-            scanner = new Scanner(System.in);
-            login(connection);
-            runMenu(connection);
-//            listMissions(connection);
-//            getMissionById(connection);
-//            countMissionsByYear(connection);
-
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to connect to the database");
-        }
-        //Todo: Starting point for your code
-        //Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass);
-
-//        if (!this.login(connection)) {
-//            return;
-//        }
-
-
-
+        DataSource dataSource = new SimpleDriverManagerDataSource(jdbcUrl, dbUser, dbPass);
+        accountRepo = new JdbcAccountRepository(dataSource);
+        missionRepo = new JdbcMoonMissionRepository(dataSource);
+        scanner = new Scanner(System.in);
+        login();
+        runMenu(accountRepo,missionRepo);
     }
 
-    private void runMenu(Connection connection) throws SQLException {
+    private void runMenu(AccountRepository accountRepo, MoonMissionRepository missionRepo) throws SQLException {
         while (true) {
             System.out.println("""
                     \n-----------------------------
@@ -97,7 +87,7 @@ public class Main {
     }
 
 
-    private void login(Connection connection) {
+    private void login() {
         System.out.print("Enter username: ");
         String username = scanner.nextLine();
         if (username == null) return;
@@ -106,20 +96,8 @@ public class Main {
         String password = scanner.nextLine();
         if (password == null) return;
 
-        boolean valid = false;
-
-        String sql = "select name, password from account where name = ? and password = ?";
-        try (PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, username);
-            ps.setString(2, password);
-            try (ResultSet rs = ps.executeQuery()) {
-                valid = rs.next();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-
-        if (!valid) {
+        boolean valid = accountRepo.findByUsernameAndPassword(username,password).isPresent();
+        if(!valid) {
             System.out.println("Invalid username or password");
         }
     }
