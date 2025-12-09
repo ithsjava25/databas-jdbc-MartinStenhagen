@@ -234,51 +234,21 @@ public class Main {
     }
 
 
-    private void deleteAccount(Connection connection) throws SQLException {
-        String fullName;
+    private void deleteAccount(AccountRepository accountRepo) {
         System.out.println("Enter user id to delete: ");
         String input = scanner.nextLine();
-        int userId = 0;
+        int userId;
         try {
             userId = Integer.parseInt(input);
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. user id must be a number.\n");
             return;
         }
-        String checkQuery = "select * from account where user_id = ?";
-        String deleteQuery = "delete from account where user_id = ?";
-
-
-        try (PreparedStatement checkStatement = connection.prepareStatement(checkQuery)) {
-            checkStatement.setInt(1, userId);
-            try (ResultSet result = checkStatement.executeQuery()) {
-                if (!result.next()) {
-                    System.out.println("No user found with id: " + userId + "\n");
-                    return;
-                }
-                fullName = result.getString("first_name") + " " + result.getString("last_name");
-            }
+        if(!accountRepo.existsByUserId(userId)){
+            System.out.println("No user with  found with id: " + userId + "\n");
         }
-//        System.out.println("Delete account for " + fullName + " ? (yes/no): ");
-//        String confirm = scanner.nextLine();
-//        if (!confirm.equals("yes")) {
-//            System.out.println("Deletion cancelled.\n");
-//            return;
-//        }
-
-        try (PreparedStatement deleteStatement = connection.prepareStatement(deleteQuery)) {
-            deleteStatement.setInt(1, userId);
-
-            int rows = deleteStatement.executeUpdate();
-            if (rows > 0) {
-                System.out.println("Account with id: " + userId + " has been deleted\n");
-            } else {
-                System.out.println("Failed to delete account.\n");
-
-            }
-        }
-
-
+        accountRepo.deleteById(userId);
+        System.out.println("Account with id: " + userId + " has been deleted\n");
     }
 
 
