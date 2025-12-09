@@ -58,6 +58,22 @@ public class JdbcAccountRepository implements AccountRepository {
     }
 
     @Override
+    public boolean existsByUserId(int userId) {
+        String query = "select 1 from account where user_id = ?";
+        try(Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1,userId);
+            try(ResultSet result = preparedStatement.executeQuery()){
+                return result.next();
+            }
+
+        }catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    @Override
     public Account create(Account account) {
         String query = "insert into account(name, password, first_name, last_name, ssn) values (?, ?, ?, ?, ?)";
 

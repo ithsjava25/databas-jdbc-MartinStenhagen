@@ -177,7 +177,7 @@ public class Main {
         }
     }
 
-    private void createAccount() {
+    private void createAccount(AccountRepository accountRepo) {
         System.out.println("Enter a first name: ");
         String firstName = scanner.nextLine();
         System.out.println("Enter a last name: ");
@@ -200,50 +200,37 @@ public class Main {
         String name = (firstName.length() >= 3 ? firstName.substring(0, 3) : firstName) +
                 (lastName.length() >= 3 ? lastName.substring(0, 3) : lastName);
 
-        Account account = new Account(name, password , firstName, lastName, ssn);
+        Account account = new Account(name, password, firstName, lastName, ssn);
         accountRepo.create(account);
         System.out.println("Created account with username: " + name + "\n");
     }
 
 
-    private void updatePassword(Connection connection) throws SQLException {
+    private void updatePassword(AccountRepository accountRepo) {
         System.out.println("Enter user id: ");
         String input = scanner.nextLine();
-        int userId = 0;
+        int userId;
+
         try {
             userId = Integer.parseInt(input);
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. user id must be a number.\n");
             return;
         }
+
+        if(!accountRepo.existsByUserId(userId)){
+            System.out.println("No user with id: " + userId + "\n");
+            return;
+        }
+
         System.out.println("Enter a new password: ");
         String newPassword = scanner.nextLine();
 
+        accountRepo.updatePassword(userId, newPassword);
+        System.out.println("Updated password for user with id: " + userId + "\n");
+
         String checkQuery = "select * from account where user_id = ?";
         String updateQuery = "update account set password = ? where user_id = ?";
-
-
-        try (PreparedStatement checkStatement = connection.prepareStatement(checkQuery)) {
-            checkStatement.setInt(1, userId);
-            try (ResultSet result = checkStatement.executeQuery()) {
-                if (!result.next()) {
-                    System.out.println("No user found with id: " + userId + "\n");
-                    return;
-                }
-            }
-        }
-        try (PreparedStatement updateStatement = connection.prepareStatement(updateQuery)) {
-            updateStatement.setString(1, newPassword);
-            updateStatement.setInt(2, userId);
-
-            int rows = updateStatement.executeUpdate();
-            if (rows > 0) {
-                System.out.println("Password updated for user " + userId + ".\n");
-            } else {
-                System.out.println("Password update failed.\n");
-            }
-        }
-
     }
 
 
