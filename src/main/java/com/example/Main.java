@@ -6,10 +6,8 @@ import com.example.repo.AccountRepository;
 import com.example.repo.MoonMissionRepository;
 import com.example.repo.jdbc.JdbcAccountRepository;
 import com.example.repo.jdbc.JdbcMoonMissionRepository;
-import org.testcontainers.shaded.com.fasterxml.jackson.databind.util.ISO8601Utils;
 
 import javax.sql.DataSource;
-import javax.xml.transform.Result;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.List;
@@ -94,18 +92,22 @@ public class Main {
     }
 
     private void login() {
-        System.out.print("Enter username: ");
-        String username = scanner.nextLine();
-        if (username == null) return;
+        while (true) {
+            System.out.print("Enter username: ");
+            String username = scanner.nextLine();
+            if (username.isEmpty()) return;
 
-        System.out.print("Enter password: ");
-        String password = scanner.nextLine();
-        if (password == null) return;
+            System.out.print("Enter password: ");
+            String password = scanner.nextLine();
+            if (password.isEmpty()) return;
 
-        boolean valid = accountRepo.findByUsernameAndPassword(username,password).isPresent();
-        if(!valid) {
-            System.out.println("Invalid username or password");
-            login();
+            boolean valid = accountRepo.findByUsernameAndPassword(username,password).isPresent();
+            if(valid) {
+                return;
+
+            }else {
+                System.out.println("Invalid username or password");
+            }
         }
     }
 
@@ -221,6 +223,10 @@ public class Main {
 
         System.out.println("Enter a new password: ");
         String newPassword = scanner.nextLine();
+        if(newPassword.isEmpty()){
+            System.out.println("Password cannot be empty.\n");
+            return;
+        }
 
         accountRepo.updatePassword(userId, newPassword);
         System.out.println("Updated password for user with id: " + userId + "\n");
@@ -238,7 +244,7 @@ public class Main {
             return;
         }
         if(!accountRepo.existsByUserId(userId)){
-            System.out.println("No user with  found with id: " + userId + "\n");
+            System.out.println("No user found with id: " + userId + "\n");
             return;
         }
         boolean deleted = accountRepo.deleteById(userId);
