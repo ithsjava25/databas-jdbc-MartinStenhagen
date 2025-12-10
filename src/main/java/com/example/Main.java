@@ -43,10 +43,10 @@ public class Main {
         missionRepo = new JdbcMoonMissionRepository(dataSource);
         scanner = new Scanner(System.in);
         login();
-        runMenu(accountRepo,missionRepo);
+        runMenu();
     }
 
-    private void runMenu(AccountRepository accountRepo, MoonMissionRepository missionRepo) {
+    private void runMenu() {
         boolean running = true;
         while (running) {
             printMenu();
@@ -56,12 +56,12 @@ public class Main {
                 String choice = scanner.nextLine().trim();
 
                 switch (choice) {
-                    case "1" -> listMissions(missionRepo);
-                    case "2" -> getMissionById(missionRepo);
-                    case "3" -> countMissionsByYear(missionRepo);
-                    case "4" -> createAccount(accountRepo);
-                    case "5" -> updatePassword(accountRepo);
-                    case "6" -> deleteAccount(accountRepo);
+                    case "1" -> listMissions();
+                    case "2" -> getMissionById();
+                    case "3" -> countMissionsByYear();
+                    case "4" -> createAccount();
+                    case "5" -> updatePassword();
+                    case "6" -> deleteAccount();
                     case "0" -> {
                         System.out.println("Exiting program...");
                         running = false;
@@ -117,7 +117,7 @@ public class Main {
         }
     }
 
-    private void listMissions(MoonMissionRepository missionRepo) {
+    private void listMissions() {
         List<MoonMission> missions = missionRepo.findAll();
         if (missions.isEmpty()) {
             System.out.println("No missions found.");
@@ -127,7 +127,7 @@ public class Main {
         }
     }
 
-    private void getMissionById(MoonMissionRepository missionRepo) {
+    private void getMissionById() {
         System.out.println("Enter mission id: ");
         String input = scanner.nextLine().trim();
         int id;
@@ -155,7 +155,7 @@ public class Main {
         System.out.println("Outcome: " + mission.get().getOutcome());
     }
 
-    private void countMissionsByYear(MoonMissionRepository missionRepo) {
+    private void countMissionsByYear() {
         System.out.println("Enter mission year: ");
         String input = scanner.nextLine().trim();
         int year;
@@ -175,7 +175,7 @@ public class Main {
         }
     }
 
-    private void createAccount(AccountRepository accountRepo) {
+    private void createAccount() {
         System.out.println("Enter a first name: ");
         String firstName = scanner.nextLine().trim();
         System.out.println("Enter a last name: ");
@@ -216,7 +216,7 @@ public class Main {
     }
 
 
-    private void updatePassword(AccountRepository accountRepo) {
+    private void updatePassword() {
         System.out.println("Enter user id: ");
         String input = scanner.nextLine().trim();
         int userId;
@@ -251,7 +251,7 @@ public class Main {
     }
 
 
-    private void deleteAccount(AccountRepository accountRepo) {
+    private void deleteAccount() {
         System.out.println("Enter user id to delete: ");
         String input = scanner.nextLine().trim();
         int userId;
