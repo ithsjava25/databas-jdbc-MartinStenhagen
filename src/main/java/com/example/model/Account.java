@@ -9,6 +9,11 @@ public class Account {
     public String ssn;
 
     public Account(String name, String password, String firstName, String lastName, String ssn) {
+        this.name = name;
+        this.password = password;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.ssn = ssn;
     }
     public Account(){}
 }

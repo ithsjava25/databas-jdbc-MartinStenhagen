@@ -1,5 +1,6 @@
 package com.example.repo.jdbc;
 
+import com.example.DatabaseException;
 import com.example.model.Account;
 import com.example.repo.AccountRepository;
 
@@ -36,7 +37,7 @@ public class JdbcAccountRepository implements AccountRepository {
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException("Failed to execute account query.", e);
         }
     }
 
@@ -53,7 +54,7 @@ public class JdbcAccountRepository implements AccountRepository {
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException("Failed to execute account query.", e);
         }
     }
 
@@ -68,7 +69,7 @@ public class JdbcAccountRepository implements AccountRepository {
             }
 
         }catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException("Failed to execute account query.", e);
         }
 
     }
@@ -97,7 +98,7 @@ public class JdbcAccountRepository implements AccountRepository {
             return account;
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException("Failed to execute account query.", e);
         }
     }
 
@@ -114,7 +115,7 @@ public class JdbcAccountRepository implements AccountRepository {
             return preparedStatement.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException("Failed to execute account query.", e);
         }
     }
 
@@ -129,7 +130,7 @@ public class JdbcAccountRepository implements AccountRepository {
             return preparedStatement.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException("Failed to execute account query.", e);
         }
     }
 }

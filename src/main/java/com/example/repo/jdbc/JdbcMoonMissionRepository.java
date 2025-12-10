@@ -1,5 +1,6 @@
 package com.example.repo.jdbc;
 
+import com.example.DatabaseException;
 import com.example.model.MoonMission;
 import com.example.repo.MoonMissionRepository;
 
@@ -33,7 +34,7 @@ public class JdbcMoonMissionRepository implements MoonMissionRepository {
             return listResult;
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException("Failed to execute moon_mission query.", e);
         }
     }
 
@@ -51,12 +52,17 @@ public class JdbcMoonMissionRepository implements MoonMissionRepository {
                 MoonMission mission = new MoonMission();
                 mission.id = result.getInt("mission_id");
                 mission.spacecraft = result.getString("spacecraft");
-                mission.launchDate = result.getDate("launch_date").toLocalDate();
+                Date date = result.getDate("launch_date");
+                mission.launchDate = (date != null ? date.toLocalDate() : null);
+                mission.carrier_rocket = result.getString("carrier_rocket");
+                mission.operator = result.getString("operator");
+                mission.mission_type = result.getString("mission_type");
+                mission.outcome = result.getString("outcome");
                 return Optional.of(mission);
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException("Failed to execute moon_mission query.", e);
         }
     }
 
@@ -64,22 +70,23 @@ public class JdbcMoonMissionRepository implements MoonMissionRepository {
     public List<MoonMission> findAll() {
         List<MoonMission> missions = new ArrayList<>();
 
-        String sql = "SELECT mission_id, spacecraft, launch_date FROM moon_mission";
+        String query = "SELECT mission_id, spacecraft, launch_date FROM moon_mission";
 
         try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql);
+             PreparedStatement statement = connection.prepareStatement(query);
              ResultSet resultSet = statement.executeQuery()) {
 
             while (resultSet.next()) {
                 MoonMission mission = new MoonMission();
                 mission.id = resultSet.getInt("mission_id");
                 mission.spacecraft = resultSet.getString("spacecraft");
-                mission.launchDate = resultSet.getDate("launch_date").toLocalDate();
+                Date date = resultSet.getDate("launch_date");
+                mission.launchDate = (date != null ? date.toLocalDate() : null);
                 missions.add(mission);
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException("Failed to execute moon_mission query.", e);
         }
 
         return missions;
@@ -100,7 +107,7 @@ public class JdbcMoonMissionRepository implements MoonMissionRepository {
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new DatabaseException("Failed to execute moon_mission query.", e);
         }
     }
 }

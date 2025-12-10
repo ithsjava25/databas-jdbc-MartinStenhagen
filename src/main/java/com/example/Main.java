@@ -21,7 +21,7 @@ public class Main {
     private AccountRepository accountRepo;
     private MoonMissionRepository missionRepo;
 
-    static void main(String[] args) throws SQLException {
+    public static void main(String[] args) {
         if (isDevMode(args)) {
             DevDatabaseInitializer.start();
         }
@@ -49,8 +49,37 @@ public class Main {
     }
 
     private void runMenu(AccountRepository accountRepo, MoonMissionRepository missionRepo) {
-        while (true) {
-            System.out.println("""
+        boolean running = true;
+        while (running) {
+            printMenu();
+            System.out.println("Enter choice: ");
+
+            try {
+                String choice = scanner.nextLine().trim();
+
+                switch (choice) {
+                    case "1" -> listMissions(missionRepo);
+                    case "2" -> getMissionById(missionRepo);
+                    case "3" -> countMissionsByYear(missionRepo);
+                    case "4" -> createAccount(accountRepo);
+                    case "5" -> updatePassword(accountRepo);
+                    case "6" -> deleteAccount(accountRepo);
+                    case "0" -> {
+                        System.out.println("Exiting program...");
+                        running = false;
+                    }
+                    default -> System.out.println("Invalid choice.");
+                }
+            } catch (DatabaseException dbEx) {
+                System.out.println("A database error occurred. Please try again.\n");
+            }catch (Exception e) {
+                System.out.println("An unexpected error occurred. Please try again.\n");
+            }
+        }
+    }
+
+    private void printMenu() {
+        System.out.println("""
                     \n-----------------------------
                     1) List moon missions
                     2) Get moon mission by id
@@ -62,32 +91,6 @@ public class Main {
                     -----------------------------
                     """);
 
-            System.out.println("Enter choice: ");
-            String input = scanner.nextLine();
-            if (input.isEmpty() || !isInputValid(input, 0, 6)) {
-                System.out.println("Invalid input, enter a number 0-6.\n");
-                continue;
-            }
-            int choice = Integer.parseInt(input);
-            switch (choice) {
-                case 0 -> {
-                    IO.println("Exiting program...");
-                    return;
-                }
-
-                case 1 -> listMissions(missionRepo);
-
-                case 2 -> getMissionById(missionRepo);
-
-                case 3 -> countMissionsByYear(missionRepo);
-
-                case 4 -> createAccount(accountRepo);
-
-                case 5 -> updatePassword(accountRepo);
-
-                case 6 -> deleteAccount(accountRepo);
-            }
-        }
     }
 
     private void login() {
@@ -102,16 +105,7 @@ public class Main {
         boolean valid = accountRepo.findByUsernameAndPassword(username,password).isPresent();
         if(!valid) {
             System.out.println("Invalid username or password");
-        }
-    }
-
-    //Hjälpmetod istället för att ha ett default-case för att fånga icke-numerisk input innan switch körs.
-    private boolean isInputValid(String input, int min, int max) {
-        try {
-            int n = Integer.parseInt(input);
-            return (n >= min && n <= max);
-        } catch (NumberFormatException e) {
-            return false;
+            login();
         }
     }
 
@@ -188,6 +182,12 @@ public class Main {
             return;
         }
 
+        if (!ssn.matches("\\d{10}") && !ssn.matches("\\d{6}-\\d{4}")) {
+            System.out.println("ssn must be 10 digits or in format YYMMDD-XXXX.\n");
+            return;
+        }
+
+
         if (accountRepo.existsBySsn(ssn)) {
             System.out.println("An account with ssn: " + ssn + " already exists.\n");
             return;
@@ -198,7 +198,7 @@ public class Main {
 
         Account account = new Account(name, password, firstName, lastName, ssn);
         accountRepo.create(account);
-        System.out.println("Created account with username: " + name + "\n");
+        System.out.println("Account created with username: " + name + "\n");
     }
 
 
@@ -239,9 +239,14 @@ public class Main {
         }
         if(!accountRepo.existsByUserId(userId)){
             System.out.println("No user with  found with id: " + userId + "\n");
+            return;
         }
-        accountRepo.deleteById(userId);
-        System.out.println("Account with id: " + userId + " has been deleted\n");
+        boolean deleted = accountRepo.deleteById(userId);
+        if(deleted){
+            System.out.println("Account with id: " + userId + " has been deleted\n");
+        }else{
+            System.out.println("Failed to delete account with id: " + userId + "\n");
+        }
     }
 
 
