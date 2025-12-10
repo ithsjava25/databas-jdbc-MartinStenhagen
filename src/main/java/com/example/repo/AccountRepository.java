@@ -8,6 +8,7 @@ public interface AccountRepository {
     Account create(Account account);
     boolean existsBySsn(String ssn);
     boolean existsByUserId(int userId);
+    boolean existsByName(String name);
     boolean updatePassword(int userId, String newPassword);
     boolean deleteById(int userId);
 }

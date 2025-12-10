@@ -75,6 +75,23 @@ public class JdbcAccountRepository implements AccountRepository {
     }
 
     @Override
+    public boolean existsByName(String name) {
+        String query = "SELECT COUNT(*) FROM account WHERE name = ?";
+        try(Connection connection = dataSource.getConnection();
+            PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, name);
+            ResultSet result = preparedStatement.executeQuery();
+            if (result.next()) {
+                return result.getInt(1) > 0;
+            }
+            return false;
+        } catch (SQLException e) {
+            throw new DatabaseException("Failed to  execute account query.", e);
+        }
+    }
+
+
+    @Override
     public Account create(Account account) {
         String query = "insert into account(name, password, first_name, last_name, ssn) values (?, ?, ?, ?, ?)";
 

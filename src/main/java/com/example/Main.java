@@ -95,11 +95,17 @@ public class Main {
         while (true) {
             System.out.print("Enter username: ");
             String username = scanner.nextLine();
-            if (username.isEmpty()) return;
+            if (username.isEmpty()) {
+                System.out.println("Username cannot be empty.");
+                continue;
+            }
 
             System.out.print("Enter password: ");
             String password = scanner.nextLine();
-            if (password.isEmpty()) return;
+            if (password.isEmpty()) {
+                System.out.println("Password cannot be empty.");
+                continue;
+            }
 
             boolean valid = accountRepo.findByUsernameAndPassword(username,password).isPresent();
             if(valid) {
@@ -197,7 +203,12 @@ public class Main {
 
         String name = (firstName.length() >= 3 ? firstName.substring(0, 3) : firstName) +
                 (lastName.length() >= 3 ? lastName.substring(0, 3) : lastName);
+        int suffix = 1;
 
+        while(accountRepo.existsByName(name)) {
+            name = name + suffix;
+            suffix++;
+        }
         Account account = new Account(name, password, firstName, lastName, ssn);
         accountRepo.create(account);
         System.out.println("Account created with username: " + name + "\n");
@@ -228,8 +239,14 @@ public class Main {
             return;
         }
 
-        accountRepo.updatePassword(userId, newPassword);
-        System.out.println("Updated password for user with id: " + userId + "\n");
+        boolean updated = accountRepo.updatePassword(userId, newPassword);
+        if(updated){
+            System.out.println("Updated password for user with id: " + userId + "\n");
+        }
+        else {
+            System.out.println("Failed to update password for user with id: " + userId + "\n");
+        }
+
     }
 
 
