@@ -94,14 +94,14 @@ public class Main {
     private void login() {
         while (true) {
             System.out.print("Enter username: ");
-            String username = scanner.nextLine();
+            String username = scanner.nextLine().trim();
             if (username.isEmpty()) {
                 System.out.println("Username cannot be empty.");
                 continue;
             }
 
             System.out.print("Enter password: ");
-            String password = scanner.nextLine();
+            String password = scanner.nextLine().trim();
             if (password.isEmpty()) {
                 System.out.println("Password cannot be empty.");
                 continue;
@@ -129,7 +129,7 @@ public class Main {
 
     private void getMissionById(MoonMissionRepository missionRepo) {
         System.out.println("Enter mission id: ");
-        String input = scanner.nextLine();
+        String input = scanner.nextLine().trim();
         int id;
 
         try {
@@ -157,7 +157,7 @@ public class Main {
 
     private void countMissionsByYear(MoonMissionRepository missionRepo) {
         System.out.println("Enter mission year: ");
-        String input = scanner.nextLine();
+        String input = scanner.nextLine().trim();
         int year;
         try{
             year = Integer.parseInt(input);
@@ -177,13 +177,13 @@ public class Main {
 
     private void createAccount(AccountRepository accountRepo) {
         System.out.println("Enter a first name: ");
-        String firstName = scanner.nextLine();
+        String firstName = scanner.nextLine().trim();
         System.out.println("Enter a last name: ");
-        String lastName = scanner.nextLine();
+        String lastName = scanner.nextLine().trim();
         System.out.println("Enter ssn: ");
-        String ssn = scanner.nextLine();
+        String ssn = scanner.nextLine().trim();
         System.out.println("Choose a password: ");
-        String password = scanner.nextLine();
+        String password = scanner.nextLine().trim();
 
         if (firstName.isEmpty() || lastName.isEmpty() || password.isEmpty()) {
             System.out.println("Invalid input. Names and password cannot be empty.\n");
@@ -201,12 +201,13 @@ public class Main {
             return;
         }
 
-        String name = (firstName.length() >= 3 ? firstName.substring(0, 3) : firstName) +
+        String baseName = (firstName.length() >= 3 ? firstName.substring(0, 3) : firstName) +
                 (lastName.length() >= 3 ? lastName.substring(0, 3) : lastName);
+        String name = baseName;
         int suffix = 1;
 
         while(accountRepo.existsByName(name)) {
-            name = name + suffix;
+            name = baseName + suffix;
             suffix++;
         }
         Account account = new Account(name, password, firstName, lastName, ssn);
@@ -217,7 +218,7 @@ public class Main {
 
     private void updatePassword(AccountRepository accountRepo) {
         System.out.println("Enter user id: ");
-        String input = scanner.nextLine();
+        String input = scanner.nextLine().trim();
         int userId;
 
         try {
@@ -233,7 +234,7 @@ public class Main {
         }
 
         System.out.println("Enter a new password: ");
-        String newPassword = scanner.nextLine();
+        String newPassword = scanner.nextLine().trim();
         if(newPassword.isEmpty()){
             System.out.println("Password cannot be empty.\n");
             return;
@@ -252,7 +253,7 @@ public class Main {
 
     private void deleteAccount(AccountRepository accountRepo) {
         System.out.println("Enter user id to delete: ");
-        String input = scanner.nextLine();
+        String input = scanner.nextLine().trim();
         int userId;
         try {
             userId = Integer.parseInt(input);
