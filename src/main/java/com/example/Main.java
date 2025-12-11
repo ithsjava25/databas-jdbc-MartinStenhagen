@@ -195,9 +195,8 @@ public class Main {
             return;
         }
 
-
         if (accountRepo.existsBySsn(ssn)) {
-            System.out.println("An account with ssn: " + ssn + " already exists.\n");
+            System.out.println("An account with this ssn already exists.\n");
             return;
         }
 
@@ -249,7 +248,6 @@ public class Main {
         }
 
     }
-
 
     private void deleteAccount() {
         System.out.println("Enter user id to delete: ");
