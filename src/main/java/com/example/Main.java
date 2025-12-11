@@ -42,8 +42,13 @@ public class Main {
         accountRepo = new JdbcAccountRepository(dataSource);
         missionRepo = new JdbcMoonMissionRepository(dataSource);
         scanner = new Scanner(System.in);
-        login();
-        runMenu();
+        try {
+            login();
+            runMenu();
+        } catch (DatabaseException dbEx) {
+            System.out.println("A database error occurred during login. Please try again later.");
+
+        }
     }
 
     private void runMenu() {
@@ -70,7 +75,7 @@ public class Main {
                 }
             } catch (DatabaseException dbEx) {
                 System.out.println("A database error occurred. Please try again.\n");
-            }catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("An unexpected error occurred. Please try again.\n");
             }
         }
@@ -78,16 +83,16 @@ public class Main {
 
     private void printMenu() {
         System.out.println("""
-                    \n-----------------------------
-                    1) List moon missions
-                    2) Get moon mission by id
-                    3) Count missions by year
-                    4) Create an account
-                    5) Update password
-                    6) Delete account
-                    0) Exit
-                    -----------------------------
-                    """);
+                \n-----------------------------
+                1) List moon missions
+                2) Get moon mission by id
+                3) Count missions by year
+                4) Create an account
+                5) Update password
+                6) Delete account
+                0) Exit
+                -----------------------------
+                """);
 
     }
 
@@ -107,11 +112,11 @@ public class Main {
                 continue;
             }
 
-            boolean valid = accountRepo.findByUsernameAndPassword(username,password).isPresent();
-            if(valid) {
+            boolean valid = accountRepo.findByUsernameAndPassword(username, password).isPresent();
+            if (valid) {
                 return;
 
-            }else {
+            } else {
                 System.out.println("Invalid username or password");
             }
         }
@@ -122,8 +127,8 @@ public class Main {
         if (missions.isEmpty()) {
             System.out.println("No missions found.");
         }
-        for (MoonMission mission : missions){
-        System.out.println(mission.getSpacecraft());
+        for (MoonMission mission : missions) {
+            System.out.println(mission.getSpacecraft());
         }
     }
 
@@ -159,7 +164,7 @@ public class Main {
         System.out.println("Enter mission year: ");
         String input = scanner.nextLine().trim();
         int year;
-        try{
+        try {
             year = Integer.parseInt(input);
         } catch (NumberFormatException e) {
             System.out.println("Invalid input. Mission year must be a number.\n");
@@ -170,7 +175,7 @@ public class Main {
             System.out.println("No missions found for year: " + year + "\n");
         } else if (numberOfMissions == 1) {
             System.out.println("Found " + numberOfMissions + " mission for year: " + year + "\n");
-        }else{
+        } else {
             System.out.println("Found " + numberOfMissions + " missions for year: " + year + "\n");
         }
     }
@@ -205,7 +210,7 @@ public class Main {
         String name = baseName;
         int suffix = 1;
 
-        while(accountRepo.existsByName(name)) {
+        while (accountRepo.existsByName(name)) {
             name = baseName + suffix;
             suffix++;
         }
@@ -227,23 +232,22 @@ public class Main {
             return;
         }
 
-        if(!accountRepo.existsByUserId(userId)){
+        if (!accountRepo.existsByUserId(userId)) {
             System.out.println("No user with id: " + userId + "\n");
             return;
         }
 
         System.out.println("Enter a new password: ");
         String newPassword = scanner.nextLine().trim();
-        if(newPassword.isEmpty()){
+        if (newPassword.isEmpty()) {
             System.out.println("Password cannot be empty.\n");
             return;
         }
 
         boolean updated = accountRepo.updatePassword(userId, newPassword);
-        if(updated){
+        if (updated) {
             System.out.println("Updated password for user with id: " + userId + "\n");
-        }
-        else {
+        } else {
             System.out.println("Failed to update password for user with id: " + userId + "\n");
         }
 
@@ -259,14 +263,14 @@ public class Main {
             System.out.println("Invalid input. user id must be a number.\n");
             return;
         }
-        if(!accountRepo.existsByUserId(userId)){
+        if (!accountRepo.existsByUserId(userId)) {
             System.out.println("No user found with id: " + userId + "\n");
             return;
         }
         boolean deleted = accountRepo.deleteById(userId);
-        if(deleted){
+        if (deleted) {
             System.out.println("Account with id: " + userId + " has been deleted\n");
-        }else{
+        } else {
             System.out.println("Failed to delete account with id: " + userId + "\n");
         }
     }
